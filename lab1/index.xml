@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/css" href="style.css"?>
+<tour-list>
+
+	<header>Туры Сезон Весна 2025</header>
+	
+	<tour>
+		<title>Поход по маршруту "Перевал Дятлова"</title>
+		<country>Страна: Россия</country>
+		<duration>4 Дней</duration>
+		<price>56.000 ₽</price>
+	</tour>
+	
+	<tour>
+		<title>Новороссийск - город герой, тур по памятным местам</title>
+		<country>Страна: Россия</country>
+		<duration>1 День</duration>
+		<price>3.000 ₽</price>
+	</tour>
+	
+	<tour>
+		<title>Катакомбы Древнего Рима</title>
+		<country>Страна: Италия</country>
+		<duration>5 Дней</duration>
+		<price>117.000 ₽</price>
+	</tour>
+	
+	
+	<tour>
+		<title>Великая Китайская стена</title>
+		<country>Страна: Китай</country>
+		<duration>11 Дней</duration>
+		<price>68.000 ₽</price>
+	</tour>
+	
+</tour-list>

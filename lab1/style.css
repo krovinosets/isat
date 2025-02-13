@@ -1,0 +1,93 @@
+tour-list {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+header {
+    display: block;
+    text-align: center;
+    font-size: 2.5rem;
+    color: #ffffff;
+    background: linear-gradient(135deg, #2c3e50, #3498db);
+    padding: 1.5rem 0;
+    margin: 2rem 0;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-family: 'Arial Black', Gadget, sans-serif;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+header::before {
+    content: "✈️";
+    position: absolute;
+    left: 20px;
+    opacity: 0.2;
+    font-size: 3rem;
+}
+
+header::after {
+    content: "🌍";
+    position: absolute;
+    right: 20px;
+    opacity: 0.2;
+    font-size: 3rem;
+}
+
+tour {
+    display: block;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    margin-bottom: 1.5rem;
+    padding: 1.5rem;
+    transition: transform 0.2s;
+}
+
+tour:hover {
+    transform: translateY(-3px);
+}
+
+title {
+    display: block;
+    font-size: 1.5rem;
+    color: #2c3e50;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+    border-left: 4px solid #3498db;
+    padding-left: 1rem;
+}
+
+country {
+    display: block;
+    font-size: 1.1rem;
+    color: #16a085;
+    margin-bottom: 0.5rem;
+    padding: 0.3rem 0;
+    border-bottom: 1px dashed #eee;
+}
+
+duration {
+    display: inline-block;
+    background: #f1c40f;
+    color: #2c3e50;
+    padding: 0.3rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.9rem;
+    margin-right: 1rem;
+}
+
+price {
+    display: inline-block;
+    font-size: 1.3rem;
+    color: #e74c3c;
+    font-weight: 700;
+    background: linear-gradient(45deg, #ffeded, #fff);
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+}
