@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Обработка туров</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        input {
+            padding: 8px;
+            margin-right: 10px;
+            width: 200px;
+        }
+        button {
+            padding: 8px 16px;
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .result {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="input-group">
+        <input type="number" id="tourIndex" min="1" value="1" placeholder="Введите номер тура">
+        <button onclick="loadTour()">Показать детали</button>
+    </div>
+    <div id="result" class="result"></div>
+
+    <script>
+        function loadTour() {
+            const index = parseInt(document.getElementById('tourIndex').value) - 1;
+            const resultDiv = document.getElementById('result');
+			
+			var xhr = new XMLHttpRequest();
+			xhr.open('GET', 'tours.xml', false);
+			xhr.send();
+			if (xhr.status != 200) {
+				alert( xhr.status + ': ' + xhr.statusText );
+			} else {
+				const tours = xhr.responseXML.getElementsByTagName('tour');
+                    
+				if(index < 0 || index >= tours.length) {
+					resultDiv.innerHTML = `Ошибка: доступны туры с 1 по ${tours.length}`;
+					return;
+				}
+				
+				const tour = tours[index];
+				const children = Array.from(tour.children);
+				
+				resultDiv.innerHTML = `
+					<h3>Детали тура #${index + 1}:</h3>
+					<ul>
+						${children.map(child => `<li><strong>${child.tagName}:</strong> ${child.textContent}</li>`).join('')}
+					</ul>
+				`;
+			}
+        }
+        window.onload = loadTour;
+    </script>
+</body>
+</html>
