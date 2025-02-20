@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Лабораторная работа №3</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            cursor: pointer;
+        }
+        .controls {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        input, button {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background: #0077ff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            opacity: 0.8;
+        }
+        .search-filter {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+        .highlight {
+            background-color: #ffeb3b;
+        }
+        .results-counter {
+            margin: 10px 0;
+            font-weight: bold;
+            color: #0077ff;
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+</head>
+<body>
+<h1>Список друзей</h1>
+
+<div class="controls">
+    <input type="text" id="userId" placeholder="User ID">
+    <input type="text" id="accessToken" placeholder="Access Token">
+    <button onclick="loadFriends()">Загрузить</button>
+    <button onclick="sortByCity()">Сортировать по городу</button>
+    <button onclick="sortByLastName()">Сортировать по фамилии</button>
+    <div class="search-filter">
+        <input type="text" id="searchCity" placeholder="Поиск по городу">
+        <button onclick="filterByCity()">Найти</button>
+        <button onclick="clearSearch()">Сбросить</button>
+        <div class="results-counter" id="counter"></div>
+    </div>
+</div>
+
+<div id="friends-table"></div>
+
+<script>
+    let friendsData = null;
+
+    function renderTable(items) {
+        const container = document.getElementById('friends-table');
+        container.innerHTML = '';
+
+        const table = document.createElement('table');
+
+        const thead = document.createElement('thead');
+        thead.innerHTML = `
+                <tr>
+                    <th>ID</th>
+                    <th>Имя</th>
+                    <th>Фамилия</th>
+                    <th>Дата рождения</th>
+                    <th>Город</th>
+                </tr>
+            `;
+
+        const tbody = document.createElement('tbody');
+        items.forEach(friend => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                    <td>${friend.id}</td>
+                    <td>${friend.first_name}</td>
+                    <td>${friend.last_name}</td>
+                    <td>${friend.bdate || 'Не указана'}</td>
+                    <td>${friend.city?.title || 'Не указан'}</td>
+                `;
+            tbody.appendChild(row);
+        });
+
+        table.appendChild(thead);
+        table.appendChild(tbody);
+        container.appendChild(table);
+    }
+
+    function loadFriends() {
+        const USER_ID = document.getElementById('userId').value;
+        const ACCESS_TOKEN = document.getElementById('accessToken').value;
+
+        $.getJSON({
+            url: `https://api.vk.com/method/friends.get?user_id=${USER_ID}&fields=bdate,city&access_token=${ACCESS_TOKEN}&v=5.131`,
+            jsonp: "callback",
+            dataType: "jsonp"
+        }).done(function(data) {
+            friendsData = data.response.items;
+            renderTable(friendsData);
+            updateCounter();
+        }).fail(function(err) {
+            alert('Ошибка загрузки данных: ' + err.responseJSON.error.error_msg);
+        });
+    }
+
+    function updateCounter(filteredCount) {
+        const total = friendsData ? friendsData.length : 0;
+        let text = '';
+
+        if(filteredCount !== undefined && filteredCount !== total) {
+            text = `Найдено друзей из этого города: ${filteredCount} из ${total}`;
+        } else {
+            text = `Всего друзей: ${total}`;
+        }
+
+        document.getElementById('counter').textContent = text;
+    }
+
+    function sortByCity() {
+        if(!friendsData) return;
+
+        const sorted = [...friendsData].sort((a, b) => {
+            const cityA = a.city?.title || 'Не указан';
+            const cityB = b.city?.title || 'Не указан';
+            return cityA.localeCompare(cityB);
+        });
+        clearSearch();
+        renderTable(sorted);
+    }
+
+    function sortByLastName() {
+        if(!friendsData) return;
+
+        const sorted = [...friendsData].sort((a, b) => {
+            const lastNameA = a.last_name;
+            const lastNameB = b.last_name;
+            return lastNameA.localeCompare(lastNameB);
+        });
+        clearSearch();
+        renderTable(sorted);
+    }
+
+    function filterByCity() {
+        if(!friendsData) return;
+
+        const searchTerm = document.getElementById('searchCity').value.trim().toLowerCase();
+        let filtered = friendsData;
+
+        if(searchTerm) {
+            filtered = friendsData.filter(friend => {
+                const city = (friend.city?.title || '').toLowerCase();
+                return city.includes(searchTerm);
+            });
+        }
+
+        renderTable(filtered);
+        highlightMatches(searchTerm);
+        updateCounter(filtered.length);
+    }
+
+    function clearSearch() {
+        document.getElementById('searchCity').value = '';
+        renderTable(friendsData);
+        updateCounter();
+    }
+
+    function highlightMatches(searchTerm) {
+        const cells = document.querySelectorAll('td:nth-child(5)');
+        cells.forEach(cell => {
+            const city = cell.textContent.toLowerCase();
+            if(city.includes(searchTerm)) {
+                cell.classList.add('highlight');
+            } else {
+                cell.classList.remove('highlight');
+            }
+        });
+    }
+</script>
+</body>
+</html>
