@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>VK API Manual</title>
+  <style>
+    .container { max-width: 600px; margin: 20px auto; padding: 20px; font-family: Arial; }
+    .input-group { margin: 10px 0; }
+    input, textarea { width: 100%; padding: 8px; margin: 5px 0; }
+    button { background: #07f; color: white; border: none; padding: 10px 20px; cursor: pointer; }
+    .status { margin: 10px 0; padding: 10px; }
+  </style>
+  <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+</head>
+<body>
+<div class="container">
+  <button onclick="authVK()">Авторизоваться ВКонтакте</button>
+  <div class="status" id="status"></div>
+
+  <div class="input-group">
+    <h3>Создать пост</h3>
+    <input type="number" id="userId" placeholder="ID пользователя (опционально)">
+    <textarea id="postText" placeholder="Текст поста"></textarea>
+    <button onclick="createPost()">Опубликовать</button>
+  </div>
+
+  <div class="input-group">
+    <h3>Комментарий к посту</h3>
+    <input type="text" id="postId" placeholder="ID поста (формат: owner_id_post_id)">
+    <textarea id="commentText" placeholder="Текст комментария"></textarea>
+    <button onclick="addComment()">Добавить комментарий</button>
+  </div>
+
+  <div class="input-group">
+    <h3>Лайк поста</h3>
+    <input type="text" id="likePostId" placeholder="ID поста (формат: owner_id_post_id)">
+    <button onclick="likePost()">Лайкнуть</button>
+  </div>
+</div>
+
+<script>
+  const APP_ID = 7795180;
+  let accessToken = null;
+
+  window.addEventListener('load', function() {
+    const hash = window.location.hash.substring(1);
+    const params = new URLSearchParams(hash);
+    accessToken = params.get('access_token');
+
+    if(accessToken) {
+      document.getElementById('status').innerHTML = 'Авторизация успешна!';
+    }
+  });
+
+  function authVK() {
+    const redirectUri = "http://localhost/";
+    const scope = ["wall"];
+    window.location = `https://oauth.vk.com/authorize?client_id=${APP_ID}&display=page&redirect_uri=${redirectUri}&scope=${scope}&response_type=token&v=5.199`;
+  }
+
+  function callAPI(method, params) {
+    return $.ajax({
+      url: `https://api.vk.com/method/${method}`,
+      data: {
+        ...params,
+        access_token: accessToken,
+        v: '5.199'
+      },
+      dataType: 'jsonp',
+      jsonp: 'callback'
+    });
+  }
+
+  function createPost() {
+    const ownerId = $('#userId').val() || '';
+    const message = $('#postText').val();
+
+    callAPI('wall.post', {
+      owner_id: ownerId,
+      message: message,
+      privacy_view: 'friends'
+    })
+            .done(function(response) {
+              handleResponse(response, 'Пост успешно опубликован!');
+            })
+            .fail(function(jqXHR) {
+              handleError(jqXHR);
+            });
+  }
+
+  function addComment() {
+    const [ownerId, postId] = $('#postId').val().split('_');
+    const message = $('#commentText').val();
+
+    callAPI('wall.createComment', {
+      owner_id: ownerId,
+      post_id: postId,
+      message: message
+    })
+            .done(function(response) {
+              handleResponse(response, 'Комментарий добавлен!');
+            })
+            .fail(handleError);
+  }
+
+  function likePost() {
+    const [ownerId, postId] = $('#likePostId').val().split('_');
+
+    callAPI('likes.add', {
+      type: 'post',
+      owner_id: ownerId,
+      item_id: postId
+    })
+            .done(function(response) {
+              handleResponse(response, 'Лайк поставлен!');
+            })
+            .fail(handleError);
+  }
+
+  function handleResponse(response, successMsg) {
+    if(response.response) {
+      alert(successMsg);
+    } else {
+      alert('Ошибка: ' + (response.error?.error_msg || 'Неизвестная ошибка'));
+    }
+  }
+
+  function handleError(jqXHR) {
+    alert('Ошибка запроса: ' + (jqXHR.responseJSON?.error?.error_msg || 'Ошибка сети'));
+  }
+</script>
+</body>
+</html>
