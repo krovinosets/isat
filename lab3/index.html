@@ -111,6 +111,16 @@
         container.appendChild(table);
     }
 
+	function downloadJson(data, fileName = 'data.json') {
+		const jsonString = JSON.stringify(data, null, 2);
+		const blob = new Blob([jsonString], { type: 'application/json' });
+		const link = document.createElement('a');
+		link.href = URL.createObjectURL(blob);
+		link.download = fileName;
+		document.body.appendChild(link);
+		link.click();
+	}
+
     function loadFriends() {
         const USER_ID = document.getElementById('userId').value;
         const ACCESS_TOKEN = document.getElementById('accessToken').value;
@@ -121,6 +131,7 @@
             dataType: "jsonp"
         }).done(function(data) {
             friendsData = data.response.items;
+			downloadJson(data)
             renderTable(friendsData);
             updateCounter();
         }).fail(function(err) {

@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>VK API Manual</title>
+  <title>VK API</title>
   <style>
     .container { max-width: 600px; margin: 20px auto; padding: 20px; font-family: Arial; }
     .input-group { margin: 10px 0; }
@@ -39,7 +39,7 @@
 </div>
 
 <script>
-  const APP_ID = 7795180;
+  const APP_ID = 53162697;
   let accessToken = null;
 
   window.addEventListener('load', function() {
@@ -48,14 +48,19 @@
     accessToken = params.get('access_token');
 
     if(accessToken) {
-      document.getElementById('status').innerHTML = 'Авторизация успешна!';
+      document.getElementById('status').innerHTML = 'Авторизация успешна';
     }
   });
 
   function authVK() {
-    const redirectUri = "http://localhost/";
+    const redirectUri = "https://oauth.vk.com/blank.html"; // https://oauth.vk.com/blank.html
     const scope = ["wall"];
-    window.location = `https://oauth.vk.com/authorize?client_id=${APP_ID}&display=page&redirect_uri=${redirectUri}&scope=${scope}&response_type=token&v=5.199`;
+    const url = new URL(`https://oauth.vk.com/authorize?client_id=${APP_ID}&display=page&redirect_uri=${redirectUri}&scope=${scope}&response_type=token&v=5.199`);
+    const authWindow = window.open(
+      url.href,
+      'VK Auth',
+      'width=600,height=700'
+    );
   }
 
   function callAPI(method, params) {
@@ -80,12 +85,12 @@
       message: message,
       privacy_view: 'friends'
     })
-            .done(function(response) {
-              handleResponse(response, 'Пост успешно опубликован!');
-            })
-            .fail(function(jqXHR) {
-              handleError(jqXHR);
-            });
+    .done(function(response) {
+      handleResponse(response, 'Пост успешно опубликован');
+    })
+    .fail(function(jqXHR) {
+      handleError(jqXHR);
+    });
   }
 
   function addComment() {
@@ -97,10 +102,10 @@
       post_id: postId,
       message: message
     })
-            .done(function(response) {
-              handleResponse(response, 'Комментарий добавлен!');
-            })
-            .fail(handleError);
+    .done(function(response) {
+      handleResponse(response, 'Комментарий добавлен');
+    })
+    .fail(handleError);
   }
 
   function likePost() {
@@ -111,10 +116,10 @@
       owner_id: ownerId,
       item_id: postId
     })
-            .done(function(response) {
-              handleResponse(response, 'Лайк поставлен!');
-            })
-            .fail(handleError);
+    .done(function(response) {
+      handleResponse(response, 'Лайк поставлен');
+    })
+    .fail(handleError);
   }
 
   function handleResponse(response, successMsg) {
