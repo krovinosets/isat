@@ -14,6 +14,12 @@
 </head>
 <body>
 <div class="container">
+  <div class="input-group">
+    <h3>Ручной ввод токена</h3>
+    <input type="text" id="manualToken" placeholder="Введите access token">
+    <button onclick="setToken()">Установить токен</button>
+  </div>
+
   <button onclick="authVK()">Авторизоваться ВКонтакте</button>
   <div class="status" id="status"></div>
 
@@ -42,15 +48,15 @@
   const APP_ID = 53162697;
   let accessToken = null;
 
-  window.addEventListener('load', function() {
-    const hash = window.location.hash.substring(1);
-    const params = new URLSearchParams(hash);
-    accessToken = params.get('access_token');
+  function setToken() {
+    accessToken = document.getElementById('manualToken').value.trim();
 
     if(accessToken) {
-      document.getElementById('status').innerHTML = 'Авторизация успешна';
+      document.getElementById('status').innerHTML = 'Токен установлен вручную';
+    } else {
+      document.getElementById('status').innerHTML = 'Введите токен в поле выше';
     }
-  });
+  }
 
   function authVK() {
     const redirectUri = "https://oauth.vk.com/blank.html"; // https://oauth.vk.com/blank.html
