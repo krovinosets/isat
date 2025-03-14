@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>VK API</title>
+    <style>
+        .container { max-width: 600px; margin: 20px auto; padding: 20px; font-family: Arial; }
+        .input-group { margin: 10px 0; }
+        input, textarea { width: 97%; padding: 8px; margin: 5px 0; }
+        button { background: #07f; color: white; border: none; padding: 10px 20px; cursor: pointer; }
+        .status { margin: 10px 0; padding: 10px; }
+        .result-block {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        .result-title {
+            color: #07f;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        .post-content {
+            white-space: pre-wrap;
+            line-height: 1.5;
+        }
+        .friend-card {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .friend-photo {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+</head>
+<body>
+<div class="container">
+    <div class="input-group">
+        <h3>Ручной ввод токена</h3>
+        <input type="text" id="manualToken" placeholder="Введите access token">
+        <button onclick="setToken()">Установить токен</button>
+    </div>
+
+    <button onclick="authVK()">Авторизоваться ВКонтакте</button>
+    <div class="status" id="status"></div>
+
+<!--    <div class="input-group">-->
+<!--        <h3>Создать пост</h3>-->
+<!--        <input type="number" id="userId" placeholder="ID пользователя (опционально)">-->
+<!--        <textarea id="postText" placeholder="Текст поста"></textarea>-->
+<!--        <button onclick="createPost()">Опубликовать</button>-->
+<!--    </div>-->
+
+<!--    <div class="input-group">-->
+<!--        <h3>Комментарий к посту</h3>-->
+<!--        <input type="text" id="postId" placeholder="ID поста (формат: owner_id_post_id)">-->
+<!--        <textarea id="commentText" placeholder="Текст комментария"></textarea>-->
+<!--        <button onclick="addComment()">Добавить комментарий</button>-->
+
+<!--    </div>-->
+
+<!--    <div class="input-group">-->
+<!--        <h3>Лайк поста</h3>-->
+<!--        <input type="text" id="likePostId" placeholder="ID поста (формат: owner_id_post_id)">-->
+<!--        <button onclick="likePost()">Лайкнуть</button>-->
+<!--    </div>-->
+
+
+    <div class="input-group">
+        <h3>Лимит операций</h3>
+        <input type="number" id="limit" value="5" placeholder="Максимальное количество (по умолчанию 5)">
+    </div>
+
+    <div class="input-group" style="display: grid;">
+        <h3>Новые функции</h3>
+        <button onclick="getGroupFriends()">Друзья участников группы</button>
+        <input type="text" id="groupId" placeholder="ID группы">
+        <button onclick="createGroupsPost()">Пост о группах</button>
+        <br>
+        <button onclick="findPopularFriend()">Самый популярный друг</button>
+        <br>
+        <button onclick="processNewsfeed()">Анализ новостей</button>
+    </div>
+
+    <div class="result-block" id="lastPostSection">
+        <div class="result-title">Последний пост в ленте</div>
+        <div id="lastPostContent" class="post-content">
+            Информация появится здесь после выполнения запроса
+        </div>
+    </div>
+
+    <div class="result-block" id="popularFriendSection">
+        <div class="result-title">Самый популярный друг</div>
+        <div id="popularFriendContent">
+            Данные не загружены
+        </div>
+    </div>
+</div>
+
+<script>
+    const APP_ID = 53162697;
+    let accessToken = null;
+
+    function setToken() {
+        accessToken = document.getElementById('manualToken').value.trim();
+
+        if(accessToken) {
+            document.getElementById('status').innerHTML = 'Токен установлен вручную';
+        } else {
+            document.getElementById('status').innerHTML = 'Введите токен в поле выше';
+        }
+    }
+
+    function authVK() {
+        const redirectUri = "https://oauth.vk.com/blank.html";
+        const scope = ["wall,friends,groups,stats,offline"];
+        const url = new URL(`https://oauth.vk.com/authorize?client_id=${APP_ID}&display=page&redirect_uri=${redirectUri}&scope=${scope}&response_type=token&v=5.199`);
+        const authWindow = window.open(
+            url.href,
+            'VK Auth',
+            'width=600,height=700'
+        );
+    }
+
+    function callAPI(method, params) {
+        return $.ajax({
+            url: `https://api.vk.com/method/${method}`,
+            data: {
+                ...params,
+                access_token: accessToken,
+                v: '5.199'
+            },
+            dataType: 'jsonp',
+            jsonp: 'callback'
+        });
+    }
+
+    // function createPost() {
+    //     const ownerId = $('#userId').val() || '';
+    //     const message = $('#postText').val();
+    //
+    //     callAPI('wall.post', {
+    //         owner_id: ownerId,
+    //         message: message,
+    //         privacy_view: 'friends'
+    //     })
+    //         .done(function(response) {
+    //             handleResponse(response, 'Пост успешно опубликован');
+    //         })
+    //         .fail(function(jqXHR) {
+    //             handleError(jqXHR);
+    //         });
+    // }
+    //
+    // function addComment() {
+    //     const [ownerId, postId] = $('#postId').val().split('_');
+    //     const message = $('#commentText').val();
+    //
+    //     callAPI('wall.createComment', {
+    //         owner_id: ownerId,
+    //         post_id: postId,
+    //         message: message
+    //     })
+    //         .done(function(response) {
+    //             handleResponse(response, 'Комментарий добавлен');
+    //         })
+    //         .fail(handleError);
+    // }
+    //
+    // function likePost() {
+    //     const [ownerId, postId] = $('#likePostId').val().split('_');
+    //
+    //     callAPI('likes.add', {
+    //         type: 'post',
+    //         owner_id: ownerId,
+    //         item_id: postId
+    //     })
+    //         .done(function(response) {
+    //             handleResponse(response, 'Лайк поставлен');
+    //         })
+    //         .fail(handleError);
+    // }
+
+    function handleResponse(response, successMsg) {
+        if(response.response) {
+            alert(successMsg);
+        } else {
+            alert('Ошибка: ' + (response.error?.error_msg || 'Неизвестная ошибка'));
+        }
+    }
+
+    function handleError(jqXHR) {
+        alert('Ошибка запроса: ' + (jqXHR.responseJSON?.error?.error_msg || 'Ошибка сети: ' + (jqXHR)));
+    }
+
+    async function getGroupFriends() {
+        const groupId = $('#groupId').val();
+        const limit = $('#limit').val();
+
+        try {
+            const members = await callAPI('groups.getMembers', {
+                group_id: groupId,
+                count: 1000
+            });
+
+            const friends = [];
+            for(const member of members.response.items.slice(0, limit)) {
+                const response = await callAPI('friends.get', {
+                    user_id: member
+                });
+                if(response.response) friends.push(...response.response.items);
+            }
+
+            alert(`Найдено друзей: ${friends.length}`);
+        } catch(e) {
+            handleError(e);
+        }
+    }
+
+    // async function likeLastOnline() {
+    //     const limit = $('#limit').val();
+    //
+    //     const friends = await callAPI('friends.get', {
+    //         fields: 'last_seen',
+    //         count: 1000
+    //     });
+    //
+    //     const sorted = friends.response.items
+    //         .sort((a,b) => b.last_seen.time - a.last_seen.time)
+    //         .slice(0, limit);
+    //
+    //     for(const friend of sorted) {
+    //         const posts = await callAPI('wall.get', {
+    //             owner_id: friend.id,
+    //             count: 1
+    //         });
+    //
+    //         if(posts.response.items[0]) {
+    //             await callAPI('likes.add', {
+    //                 type: 'post',
+    //                 owner_id: friend.id,
+    //                 item_id: posts.response.items[0].id
+    //             });
+    //         }
+    //     }
+    //     alert('Лайки поставлены!');
+    // }
+
+    async function createGroupsPost() {
+        const groups = await callAPI('groups.get', {
+            extended: 1,
+            count: $('#limit').val()
+        });
+
+        let postText = ""
+        for(const group of groups.response.items) {
+            const response = await callAPI('groups.getById', {
+                'group_id': Math.abs(group.id),
+                fields: "members_count"
+            });
+            postText += `${group.name} (${response.response.groups[0].members_count} участников)\n`
+        }
+
+        await callAPI('wall.post', {
+            message: `Мои группы:\n${postText}`
+        });
+        alert('Пост создан!');
+    }
+
+    async function findPopularFriend() {
+        try {
+            const friends = await callAPI('friends.get', {});
+            let maxFriends = 0;
+            let popularUser = null;
+
+            for(const friendId of friends.response.items.slice(0, $('#limit').val())) {
+                const friend = await callAPI('users.get', {
+                    user_ids: friendId,
+                    fields: 'photo_100,counters'
+                });
+
+                if(friend.response[0].counters.friends > maxFriends) {
+                    maxFriends = friend.response[0].counters.friends;
+                    popularUser = friend.response[0];
+                }
+            }
+
+            // Отображение результата
+            document.getElementById('popularFriendContent').innerHTML = `
+        <div class="friend-card">
+          <img src="${popularUser.photo_100}"
+               class="friend-photo"
+               alt="${popularUser.first_name} ${popularUser.last_name}">
+          <div>
+            <h4>${popularUser.first_name} ${popularUser.last_name}</h4>
+            <p>Друзей: ${maxFriends}</p>
+            <p>Страница: <a href="https://vk.com/id${popularUser.id}"
+                         target="_blank">перейти</a></p>
+          </div>
+        </div>
+      `;
+
+        } catch(e) {
+            handleError(e);
+        }
+    }
+
+    async function processNewsfeed() {
+        try {
+            const news = await callAPI('newsfeed.get', { count: 1 });
+            const post = news.response.items[0];
+            console.log(post)
+
+
+            let names = [];
+            if(post.source_id > 0) {
+                const friends = await callAPI('friends.get', {
+                    user_id: post.source_id,
+                    count: $('#limit').val()
+                });
+                names = await getNames(friends.response.items);
+            } else {
+                const groupId = Math.abs(post.source_id);
+                const members = await callAPI('groups.getMembers', {
+                    group_id: groupId,
+                    count: $('#limit').val()
+                });
+                names = await getNames(members.response.items);
+            }
+
+            const isGroup = post.source_id < 0;
+            const response = await callAPI(isGroup ? 'groups.getById' : 'users.get', {
+                [isGroup ? 'group_id' : 'user_ids']: Math.abs(post.source_id),
+                fields: "photo_100"
+            });
+
+            const name = isGroup
+                ? response.response.groups[0].name
+                : `${response.response[0].first_name} ${response.response[0].last_name}`;
+
+            const photo = isGroup ? response.response.groups[0].photo_100 : response.response[0].photo_100
+
+
+            document.getElementById('lastPostContent').innerHTML = `
+            <div class="friend-card">
+                <img src="${photo}" class="friend-photo">
+                <div style="display: contents;">
+                    <h4>${name} ${new Date(post.date * 1000).toLocaleString()}</h4>
+                    <p>${post.text || 'Без текста'}</p>
+                    <img src="${post.attachments[0].photo.sizes[1].url}">
+                </div>
+            </div>
+            `;
+
+            alert(`Список:\n${names.join('\n')}`);
+        } catch(e) {
+            handleError(e);
+        }
+    }
+
+    async function getNames(ids) {
+        const users = await callAPI('users.get', {
+            user_ids: ids.join(','),
+            fields: 'name'
+        });
+        return users.response.map(u => `${u.first_name} ${u.last_name}`);
+    }
+</script>
+</body>
+</html>
