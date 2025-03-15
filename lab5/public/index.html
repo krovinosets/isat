@@ -283,17 +283,19 @@
             const friends = await callAPI('friends.get', {});
             let maxFriends = 0;
             let popularUser = null;
-
+            console.log(friends)
             for(const friendId of friends.response.items.slice(0, $('#limit').val())) {
+                console.log(friendId)
                 const friend = await callAPI('users.get', {
                     user_ids: friendId,
                     fields: 'photo_100,counters'
                 });
-
-                if(friend.response[0].counters.friends > maxFriends) {
+                console.log(friend)
+                if(friend.response[0].counters && friend.response[0].counters.friends > maxFriends) {
                     maxFriends = friend.response[0].counters.friends;
                     popularUser = friend.response[0];
                 }
+                await new Promise(r => setTimeout(r, 200));
             }
 
             // Отображение результата
@@ -351,6 +353,7 @@
 
             const photo = isGroup ? response.response.groups[0].photo_100 : response.response[0].photo_100
 
+            const attachment = post.attachments[0].type == "photo" ? post.attachments[0].photo.sizes[1].url : ""
 
             document.getElementById('lastPostContent').innerHTML = `
             <div class="friend-card">
@@ -358,7 +361,7 @@
                 <div style="display: contents;">
                     <h4>${name} ${new Date(post.date * 1000).toLocaleString()}</h4>
                     <p>${post.text || 'Без текста'}</p>
-                    <img src="${post.attachments[0].photo.sizes[1].url}">
+                    <img src="${attachment}" alt="Без фото">
                 </div>
             </div>
             `;
