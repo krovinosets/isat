@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Telegram Reader</title>
+  <style>
+    body { 
+      font-family: Arial; 
+      padding: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .message-card {
+      padding: 15px;
+      margin: 10px 0;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      display: flex;
+      align-items: start;
+      background: #f8f9fa;
+    }
+    .avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      margin-right: 15px;
+    }
+    .message-content {
+      flex-grow: 1;
+    }
+    .timestamp {
+      color: #666;
+      font-size: 0.9em;
+    }
+    .refresh-info {
+      text-align: center;
+      color: #666;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Последние сообщения</h1>
+  <div id="output">Загрузка сообщений...</div>
+  <div class="refresh-info">Автообновление каждые 5 секунд</div>
+
+  <script>
+    const BOT_TOKEN = 'СЮДА СВОЙ ТОКЕН';
+    const CORS_PROXY = ''; // ОСТАВЬТЕ ПУСТЫМ
+    let lastUpdateId = 0;
+
+    async function fetchMessages() {
+      try {
+        const response = await fetch(
+          `${CORS_PROXY}https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${lastUpdateId + 1}&limit=10`
+        );
+        const data = await response.json();
+        
+        if (data.result.length > 0) {
+          lastUpdateId = data.result[data.result.length - 1].update_id;
+          return data.result.reverse();
+        }
+        return [];
+        
+      } catch (error) {
+        console.error('Ошибка:', error);
+        return [];
+      }
+    }
+
+    async function renderMessages(messages) {
+      const output = document.getElementById('output');
+      
+      if (messages.length === 0) {
+        // output.innerHTML = '<div class="message-card">Нет новых сообщений</div>';
+        return;
+      }
+
+      let html = "";
+      
+      for (const update of messages) {
+        const msg = update.message;
+        const profile = await getUserProfile(msg.from.id);
+        
+        html += `
+          <div class="message-card">
+            ${profile.photo ? 
+              `<img class="avatar" src="${profile.photo}" alt="Аватар">` : 
+              `<div class="avatar" style="background: #ccc;"></div>`}
+            <div class="message-content">
+              <div class="timestamp">
+                ${new Date(msg.date * 1000).toLocaleString()}
+              </div>
+              <strong>${msg.from.first_name}</strong>
+              <p>${msg.text || 'Сообщение без текста'}</p>
+            </div>
+          </div>
+        `;
+      }
+      
+      output.innerHTML = html + output.innerHTML;
+    }
+
+    async function getUserProfile(userId) {
+      try {
+        const response = await fetch(
+          `${CORS_PROXY}https://api.telegram.org/bot${BOT_TOKEN}/getUserProfilePhotos?user_id=${userId}`
+        );
+        const data = await response.json();
+        
+        if (data.result.photos?.length > 0) {
+          const fileId = data.result.photos[0][0].file_id;
+          const fileResponse = await fetch(
+            `${CORS_PROXY}https://api.telegram.org/bot${BOT_TOKEN}/getFile?file_id=${fileId}`
+          );
+          const fileData = await fileResponse.json();
+          return {
+            photo: `https://api.telegram.org/file/bot${BOT_TOKEN}/${fileData.result.file_path}`
+          };
+        }
+        return { photo: null };
+        
+      } catch (error) {
+        console.error('Ошибка профиля:', error);
+        return { photo: null };
+      }
+    }
+
+    fetchMessages().then(renderMessages);
+    
+    setInterval(async () => {
+      const messages = await fetchMessages();
+      renderMessages(messages);
+    }, 5000);
+
+  </script>
+</body>
+</html>
